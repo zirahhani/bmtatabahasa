@@ -61,13 +61,13 @@ footer{text-align:center;color:#6c7890;font-size:.85rem;padding:20px}
   <p id="resultText"></p>
   <div class="row">
     <button class="primary" id="againBtn">Main semula</button>
-    <button class="good" id="saveBtn">Simpan keputusan pada peranti</button>
+    <button class="good" id="saveBtn">Simpan keputusan</button>
     <button class="secondary" id="csvBtn">Muat turun keputusan CSV</button>
   </div>
-  <p class="small">Keputusan disimpan pada peranti/pelayar ini sahaja. Untuk papan keputusan kelas yang menggabungkan telefon berlainan, perlu sambungkan pangkalan data atau perkhidmatan borang.</p>
+  <p class="small" id="sheetStatus" aria-live="polite">Keputusan akan dihantar ke rekod kelas apabila permainan tamat.</p>
 </section>
 <section class="card" id="boardCard">
-  <div class="row" style="align-items:center"><div><h2 style="margin:0">🥇 Papan Keputusan Peranti Ini</h2><p class="small">Keputusan yang disimpan pada pelayar ini.</p></div><div style="flex:0 0 auto"><button id="clearBoard" style="background:#8994a8;box-shadow:0 4px 0 #657083">Padam rekod</button></div></div>
+  <div class="row" style="align-items:center"><div><h2 style="margin:0">🥇 Papan Keputusan Kelas</h2><p class="small">Keputusan bersama daripada Google Sheets. Muat semula untuk menyemak keputusan terkini.</p></div><div style="flex:0 0 auto"><button id="clearBoard" style="background:#8994a8;box-shadow:0 4px 0 #657083">Padam rekod</button></div></div>
   <div style="overflow-x:auto"><table><thead><tr><th>Ked.</th><th>Nama</th><th>Kelas</th><th>Markah</th><th>Masa</th></tr></thead><tbody id="boardBody"><tr><td colspan="5">Belum ada rekod. Jom bermain!</td></tr></tbody></table></div>
 </section>
 <footer>Dibina untuk aktiviti pembelajaran Bahasa Melayu Tahun 2 💖</footer>
@@ -118,18 +118,52 @@ function next(){if(idx<questions.length-1){idx++;showQuestion()}else endGame()}
 function endGame(){
  if(finished)return;finished=true;clearInterval(timerId);updateTimer();$('gameCard').classList.add('hidden');$('resultCard').classList.remove('hidden');
  const secs=Math.floor((Date.now()-startAt)/1000);currentResult={name:$('studentName').value.trim(),klass:$('className').value.trim(),score,time:secs,date:new Date().toLocaleString('ms-MY')};
+ submittedForCurrentResult = false;
+ sendResultToSheets(currentResult);
  $('resultText').textContent=`${currentResult.name}, markah anda ${score}/100 dan masa ${fmt(secs)}. ${score>=80?'Hebat! Anda memang jaguh tatabahasa!':score>=50?'Bagus! Teruskan berlatih!':'Teruskan usaha. Anda pasti boleh!'}`;
 }
 let currentResult=null;
+const SHEETS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz-h7FhmHp9itP9E1XlkpuGG_pwc0vUoKZMe6JKduwvtd_3y6P6souUe_9nMjPc79RKfA/exec";
+let sharedRecords = [];
+let submittedForCurrentResult = false;
+function sendResultToSheets(result){
+ if(!result || submittedForCurrentResult) return;
+ submittedForCurrentResult = true;
+ $('sheetStatus').textContent = 'Sedang menghantar keputusan ke rekod kelas…';
+ fetch(SHEETS_WEB_APP_URL, {
+   method: 'POST',
+   mode: 'no-cors',
+   redirect: 'follow',
+   headers: {'Content-Type':'text/plain;charset=utf-8'},
+   body: JSON.stringify({nama:result.name, kelas:result.klass || '-', markah:result.score, masa:fmt(result.time)})
+ }).then(()=>{
+   $('sheetStatus').textContent = 'Permintaan penghantaran dibuat. Papan keputusan akan dikemas kini selepas rekod diterima.';
+   setTimeout(loadSharedBoard, 2500);
+ }).catch(()=>{
+   $('sheetStatus').textContent = 'Penghantaran tidak dapat disahkan. Semak sambungan internet dan tetapan Apps Script.';
+   submittedForCurrentResult = false;
+ });
+}
+function loadSharedBoard(){
+ const callbackName = 'tatabahasaCallback_' + Date.now();
+ const script = document.createElement('script');
+ window[callbackName] = function(data){
+   try { sharedRecords = Array.isArray(data) ? data : []; renderBoard(); }
+   finally { delete window[callbackName]; script.remove(); }
+ };
+ script.onerror = function(){ delete window[callbackName]; script.remove(); $('boardBody').innerHTML='<tr><td colspan="5">Papan keputusan bersama belum dapat dimuatkan. Semak kod Apps Script dan URL deployment.</td></tr>'; };
+ script.src = SHEETS_WEB_APP_URL + '?action=leaderboard&callback=' + callbackName + '&t=' + Date.now();
+ document.body.appendChild(script);
+}
 function getRecords(){try{return JSON.parse(localStorage.getItem('tatabahasaRecords')||'[]')}catch(e){return []}}
 function saveResult(){if(!currentResult)return;let r=getRecords();r.push(currentResult);r.sort((a,b)=>b.score-a.score||a.time-b.time);localStorage.setItem('tatabahasaRecords',JSON.stringify(r.slice(0,100)));renderBoard();$('saveBtn').textContent='✓ Keputusan disimpan';}
 function renderBoard(){
- const r=getRecords().sort((a,b)=>b.score-a.score||a.time-b.time);$('boardBody').innerHTML='';
+ const r=(sharedRecords.length ? [...sharedRecords] : getRecords()).sort((a,b)=>Number(b.score)-Number(a.score)||Number(a.time)-Number(b.time));$('boardBody').innerHTML='';
  if(!r.length){$('boardBody').innerHTML='<tr><td colspan="5">Belum ada rekod. Jom bermain!</td></tr>';return}
  r.forEach((x,i)=>{const tr=document.createElement('tr');[i+1,x.name,x.klass||'—',x.score,fmt(x.time)].forEach((v,j)=>{const td=document.createElement('td');td.textContent=v;if(j>=3)td.className='num';tr.appendChild(td)});$('boardBody').appendChild(tr)});
 }
 function downloadCSV(){const r=getRecords();if(currentResult)r.push(currentResult);if(!r.length){alert('Belum ada keputusan untuk dimuat turun.');return}const rows=[['Nama','Kelas','Markah','Masa saat','Tarikh'],...r.map(x=>[x.name,x.klass,x.score,x.time,x.date])];const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='keputusan-tatabahasa-tahun-2.csv';a.click();URL.revokeObjectURL(url)}
-$('startBtn').onclick=startGame;$('nextBtn').onclick=next;$('quitBtn').onclick=()=>{if(confirm('Tamatkan permainan sekarang?'))endGame()};$('againBtn').onclick=()=>{$('resultCard').classList.add('hidden');$('startCard').classList.remove('hidden');$('studentName').focus()};$('saveBtn').onclick=saveResult;$('csvBtn').onclick=downloadCSV;$('clearBoard').onclick=()=>{if(confirm('Padam semua rekod pada peranti ini?')){localStorage.removeItem('tatabahasaRecords');renderBoard()}};renderBoard();
+$('startBtn').onclick=startGame;$('nextBtn').onclick=next;$('quitBtn').onclick=()=>{if(confirm('Tamatkan permainan sekarang?'))endGame()};$('againBtn').onclick=()=>{$('resultCard').classList.add('hidden');$('startCard').classList.remove('hidden');$('studentName').focus()};$('saveBtn').onclick=saveResult;$('csvBtn').onclick=downloadCSV;$('clearBoard').onclick=()=>{if(confirm('Padam semua rekod pada peranti ini?')){localStorage.removeItem('tatabahasaRecords');renderBoard()}};renderBoard();loadSharedBoard();
 </script>
 </body>
 </html>
