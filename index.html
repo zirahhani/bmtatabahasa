@@ -67,7 +67,7 @@ footer{text-align:center;color:#6c7890;font-size:.85rem;padding:20px}
   <p class="small" id="sheetStatus" aria-live="polite">Keputusan akan dihantar ke rekod kelas apabila permainan tamat.</p>
 </section>
 <section class="card" id="boardCard">
-  <div class="row" style="align-items:center"><div><h2 style="margin:0">🥇 Papan Keputusan Kelas</h2><p class="small">Keputusan bersama daripada Google Sheets. Muat semula untuk menyemak keputusan terkini.</p></div><div style="flex:0 0 auto"><button id="clearBoard" style="background:#8994a8;box-shadow:0 4px 0 #657083">Padam rekod</button></div></div>
+  <div><h2 style="margin:0">🥇 Papan Keputusan Kelas</h2><p class="small">Keputusan bersama daripada Google Sheets. Papan ini memaparkan rekod kelas yang dikongsi. Pengurusan dan pemadaman rekod hanya dilakukan oleh guru melalui Google Sheets.</p></div>
   <div style="overflow-x:auto"><table><thead><tr><th>Ked.</th><th>Nama</th><th>Kelas</th><th>Markah</th><th>Masa</th></tr></thead><tbody id="boardBody"><tr><td colspan="5">Belum ada rekod. Jom bermain!</td></tr></tbody></table></div>
 </section>
 <footer>Dibina untuk aktiviti pembelajaran Bahasa Melayu Tahun 2 💖</footer>
@@ -158,12 +158,12 @@ function loadSharedBoard(){
 function getRecords(){try{return JSON.parse(localStorage.getItem('tatabahasaRecords')||'[]')}catch(e){return []}}
 function saveResult(){if(!currentResult)return;let r=getRecords();r.push(currentResult);r.sort((a,b)=>b.score-a.score||a.time-b.time);localStorage.setItem('tatabahasaRecords',JSON.stringify(r.slice(0,100)));renderBoard();$('saveBtn').textContent='✓ Keputusan disimpan';}
 function renderBoard(){
- const r=(sharedRecords.length ? [...sharedRecords] : getRecords()).sort((a,b)=>Number(b.score)-Number(a.score)||Number(a.time)-Number(b.time));$('boardBody').innerHTML='';
- if(!r.length){$('boardBody').innerHTML='<tr><td colspan="5">Belum ada rekod. Jom bermain!</td></tr>';return}
- r.forEach((x,i)=>{const tr=document.createElement('tr');[i+1,x.name,x.klass||'—',x.score,fmt(x.time)].forEach((v,j)=>{const td=document.createElement('td');td.textContent=v;if(j>=3)td.className='num';tr.appendChild(td)});$('boardBody').appendChild(tr)});
+ const r=[...sharedRecords].sort((a,b)=>Number(b.score)-Number(a.score)||Number(a.time)-Number(b.time));$('boardBody').innerHTML='';
+ if(!r.length){$('boardBody').innerHTML='<tr><td colspan="5">Belum ada rekod dalam Google Sheets. Cuba muat semula selepas murid menghantar keputusan.</td></tr>';return}
+ r.forEach((x,i)=>{const tr=document.createElement('tr');[i+1,x.name,x.klass||'—',x.score,fmt(Number(x.time)||0)].forEach((v,j)=>{const td=document.createElement('td');td.textContent=v;if(j>=3)td.className='num';tr.appendChild(td)});$('boardBody').appendChild(tr)});
 }
 function downloadCSV(){const r=getRecords();if(currentResult)r.push(currentResult);if(!r.length){alert('Belum ada keputusan untuk dimuat turun.');return}const rows=[['Nama','Kelas','Markah','Masa saat','Tarikh'],...r.map(x=>[x.name,x.klass,x.score,x.time,x.date])];const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='keputusan-tatabahasa-tahun-2.csv';a.click();URL.revokeObjectURL(url)}
-$('startBtn').onclick=startGame;$('nextBtn').onclick=next;$('quitBtn').onclick=()=>{if(confirm('Tamatkan permainan sekarang?'))endGame()};$('againBtn').onclick=()=>{$('resultCard').classList.add('hidden');$('startCard').classList.remove('hidden');$('studentName').focus()};$('saveBtn').onclick=saveResult;$('csvBtn').onclick=downloadCSV;$('clearBoard').onclick=()=>{if(confirm('Padam semua rekod pada peranti ini?')){localStorage.removeItem('tatabahasaRecords');renderBoard()}};renderBoard();loadSharedBoard();
+$('startBtn').onclick=startGame;$('nextBtn').onclick=next;$('quitBtn').onclick=()=>{if(confirm('Tamatkan permainan sekarang?'))endGame()};$('againBtn').onclick=()=>{$('resultCard').classList.add('hidden');$('startCard').classList.remove('hidden');$('studentName').focus()};$('saveBtn').onclick=saveResult;$('csvBtn').onclick=downloadCSV;renderBoard();loadSharedBoard();
 </script>
 </body>
 </html>
