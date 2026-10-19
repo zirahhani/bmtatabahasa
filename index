@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengembaraan Tatabahasa Tahun 2</title>
+<style>
+:root{--ink:#26324a;--pink:#ff6f91;--yellow:#ffd166;--blue:#5bc0eb;--green:#70d6a7;--purple:#9b8afb}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:linear-gradient(135deg,#fff0f5,#e8f8ff);min-height:100vh}
+.wrap{max-width:1000px;margin:auto;padding:16px}.hero{text-align:center;padding:12px 8px}.hero h1{font-size:clamp(1.7rem,5vw,2.7rem);margin:4px}.hero p{margin:8px}
+.card{background:#fff;border:3px solid #fff;border-radius:22px;padding:18px;box-shadow:0 8px 22px #26324a14;margin:14px 0}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:180px}
+label{display:block;font-weight:700;margin-bottom:6px}input,button{font:inherit}input{width:100%;padding:12px;border:2px solid #dce5f2;border-radius:12px}
+button{border:0;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;background:var(--purple);color:white;box-shadow:0 4px 0 #7666d6}button:active{transform:translateY(2px);box-shadow:0 2px 0 #7666d6}button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:var(--pink);box-shadow:0 4px 0 #d84e70}.secondary{background:var(--blue);box-shadow:0 4px 0 #2695c3}.good{background:var(--green);box-shadow:0 4px 0 #3eae7b;color:#173c31}
+.hud{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;font-weight:800}.pill{background:#f2f5ff;padding:8px 12px;border-radius:999px}
+#scene{position:relative;overflow:hidden;border-radius:20px;min-height:190px;background:linear-gradient(#a8e7ff 0 68%,#8edb9e 68%);border:3px solid white}
+.cloud{position:absolute;font-size:34px;opacity:.8;top:12px}.cloud.one{left:8%}.cloud.two{right:12%;top:38px}
+.path{position:absolute;bottom:18px;left:0;right:0;height:12px;background:#c58b52;border-radius:20px}
+#heroChar{position:absolute;bottom:27px;left:8%;font-size:48px;transition:left .35s ease;filter:drop-shadow(0 4px 2px #0002)}
+.coin{position:absolute;bottom:43px;font-size:28px;animation:bob 1s infinite alternate}
+@keyframes bob{to{transform:translateY(-8px)}}
+.question{font-size:1.25rem;font-weight:800;margin:12px 0}.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.answers button{background:#fff;color:var(--ink);box-shadow:0 4px 0 #d7dfef;border:2px solid #e5eaf5;text-align:left}.answers button:hover{background:#fff7cc}.answers button.correct{background:#d8ffeb;border-color:#5bc994}.answers button.wrong{background:#ffe0e7;border-color:#ff91a9}
+.feedback{min-height:28px;font-weight:800;margin-top:12px}.small{font-size:.9rem;color:#667085}.hidden{display:none!important}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #e8edf5}th{background:#f4f5ff}td.num{text-align:right;font-variant-numeric:tabular-nums}
+footer{text-align:center;color:#6c7890;font-size:.85rem;padding:20px}
+@media(max-width:560px){.wrap{padding:10px}.card{padding:14px}.answers{grid-template-columns:1fr}.row>*{min-width:100%}#scene{min-height:160px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div style="font-size:2.6rem">🚀 🌈 ⭐</div>
+  <h1>Pengembaraan Tatabahasa</h1>
+  <p>Permainan Bahasa Melayu Tahun 2 · Imbuhan awalan dan akhiran</p>
+</header>
+<section class="card" id="startCard">
+  <h2>🎒 Sedia untuk mengembara?</h2>
+  <div class="row">
+    <div><label for="studentName">Nama murid</label><input id="studentName" maxlength="40" placeholder="Contoh: Aina"></div>
+    <div><label for="className">Kelas (pilihan)</label><input id="className" maxlength="30" placeholder="Contoh: 2 Bestari"></div>
+  </div>
+  <p class="small">Jawab 10 soalan. Jawapan betul mendapat 10 mata. Cuba kumpulkan mata sebanyak mungkin!</p>
+  <button class="primary" id="startBtn">Mula bermain ▶</button>
+</section>
+<section id="gameCard" class="hidden">
+  <div class="card">
+    <div class="hud"><span class="pill">👧 <span id="hudName">Murid</span></span><span class="pill">⭐ Mata: <span id="score">0</span></span><span class="pill">⏱️ Masa: <span id="timer">00:00</span></span><span class="pill">Soalan: <span id="progress">1/10</span></span></div>
+    <div id="scene" aria-label="Latar permainan kartun">
+      <span class="cloud one">☁️</span><span class="cloud two">☁️</span><span class="coin" id="coin" style="left:40%">🪙</span>
+      <div class="path"></div><div id="heroChar">🧒</div>
+    </div>
+    <div class="question" id="questionText">Pilih jawapan yang betul.</div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+    <div class="row" style="margin-top:10px"><button class="secondary" id="nextBtn" disabled>Soalan seterusnya ➜</button><button id="quitBtn" style="background:#8994a8;box-shadow:0 4px 0 #657083">Tamatkan permainan</button></div>
+  </div>
+</section>
+<section class="card hidden" id="resultCard">
+  <h2>🏆 Tahniah, pengembara!</h2>
+  <p id="resultText"></p>
+  <div class="row">
+    <button class="primary" id="againBtn">Main semula</button>
+    <button class="good" id="saveBtn">Simpan keputusan pada peranti</button>
+    <button class="secondary" id="csvBtn">Muat turun keputusan CSV</button>
+  </div>
+  <p class="small">Keputusan disimpan pada peranti/pelayar ini sahaja. Untuk papan keputusan kelas yang menggabungkan telefon berlainan, perlu sambungkan pangkalan data atau perkhidmatan borang.</p>
+</section>
+<section class="card" id="boardCard">
+  <div class="row" style="align-items:center"><div><h2 style="margin:0">🥇 Papan Keputusan Peranti Ini</h2><p class="small">Keputusan yang disimpan pada pelayar ini.</p></div><div style="flex:0 0 auto"><button id="clearBoard" style="background:#8994a8;box-shadow:0 4px 0 #657083">Padam rekod</button></div></div>
+  <div style="overflow-x:auto"><table><thead><tr><th>Ked.</th><th>Nama</th><th>Kelas</th><th>Markah</th><th>Masa</th></tr></thead><tbody id="boardBody"><tr><td colspan="5">Belum ada rekod. Jom bermain!</td></tr></tbody></table></div>
+</section>
+<footer>Dibina untuk aktiviti pembelajaran Bahasa Melayu Tahun 2 💖</footer>
+</div>
+<script>
+const bank = [
+ {q:"Pilih perkataan yang mempunyai imbuhan awalan meN-.",a:["makanan","membaca","cantik","jalanan"],c:1,why:"Membaca mempunyai awalan mem-."},
+ {q:"Apakah perkataan berimbuhan yang betul bagi kata dasar 'sapu'?",a:["menyapu","sapuan","tersapu meja","penyapu-kan"],c:0,why:"Men + sapu menjadi menyapu."},
+ {q:"Pilih perkataan yang mempunyai imbuhan akhiran.",a:["berlari","terjatuh","makanan","membuka"],c:2,why:"Makanan mempunyai akhiran -an."},
+ {q:"Isi tempat kosong: Adik sedang ____ bola.",a:["bermain","mainan","permainan","dimainkanan"],c:0,why:"Ber- + main menjadi bermain."},
+ {q:"Kata dasar 'lukis' boleh menjadi ____.",a:["melukis","pelukisanan","lukis ber","kelukis"],c:0,why:"MeN- + lukis menjadi melukis."},
+ {q:"Pilih perkataan yang berakhiran -kan.",a:["buku","masukkan","berjalan","pelari"],c:1,why:"Masukkan mempunyai akhiran -kan."},
+ {q:"Kata dasar 'ajar' menjadi ____ apabila menerima awalan peN-.",a:["pengajar","ajarkan","belajar-kan","ajaranan"],c:0,why:"Pengajar ialah perkataan dengan awalan peng-."},
+ {q:"Pilih perkataan yang mempunyai awalan ber-.",a:["berbaju","jualan","makanan","tuliskan"],c:0,why:"Berbaju mempunyai awalan ber-."},
+ {q:"Lengkapkan ayat: Ibu membeli ____ di kedai.",a:["sayur-sayuran","menyayur","bersayurkan","sayurkan"],c:0,why:"Sayur-sayuran ialah kata ganda yang sesuai dalam ayat."},
+ {q:"Pilih perkataan yang mempunyai akhiran -i.",a:["hadiri","berlari","pembaca","terbuka"],c:0,why:"Hadiri mempunyai akhiran -i."},
+ {q:"Kata dasar 'pakai' menjadi ____.",a:["pakaian","memakai","pakai-kanan","pakai ber"],c:1,why:"Memakai mempunyai awalan mem-."},
+ {q:"Pilih perkataan berawalan ter-.",a:["terjatuh","makanan","lukisan","jualan"],c:0,why:"Terjatuh mempunyai awalan ter-."},
+ {q:"Perkataan 'minuman' mempunyai akhiran ____.",a:["-kan","-i","-an","ber-"],c:2,why:"Minuman berakhir dengan imbuhan -an."},
+ {q:"Pilih perkataan yang betul: Kakak ____ bunga setiap pagi.",a:["menyiram","siraman","bersiramkan","siram-an"],c:0,why:"Menyiram ialah kata kerja yang sesuai."},
+ {q:"Perkataan 'pelari' mempunyai imbuhan ____.",a:["awalan sahaja","akhiran sahaja","awalan dan akhiran","tiada imbuhan"],c:0,why:"Pe- ialah awalan dalam perkataan pelari."}
+];
+let questions=[], idx=0, score=0, startAt=0, timerId=null, current=null, finished=false;
+const $=id=>document.getElementById(id);
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function fmt(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function updateTimer(){ $('timer').textContent=fmt(Math.floor((Date.now()-startAt)/1000));}
+function startGame(){
+ const name=$('studentName').value.trim(); if(!name){$('studentName').focus();alert('Sila masukkan nama murid dahulu 😊');return}
+ questions=shuffle(bank).slice(0,10);idx=0;score=0;finished=false;startAt=Date.now();
+ $('hudName').textContent=name;$('score').textContent=score;$('startCard').classList.add('hidden');$('resultCard').classList.add('hidden');$('gameCard').classList.remove('hidden');
+ clearInterval(timerId);timerId=setInterval(updateTimer,1000);updateTimer();showQuestion();
+}
+function showQuestion(){
+ current=questions[idx];$('progress').textContent=(idx+1)+'/'+questions.length;$('questionText').textContent=current.q;$('feedback').textContent='';$('answers').innerHTML='';$('nextBtn').disabled=true;$('nextBtn').textContent=idx===questions.length-1?'Lihat keputusan 🏆':'Soalan seterusnya ➜';
+ const order=shuffle(current.a.map((text,i)=>({text,correct:i===current.c})));
+ order.forEach((o,i)=>{const b=document.createElement('button');b.textContent=String.fromCharCode(65+i)+'. '+o.text;b.onclick=()=>answer(b,o.correct);$('answers').appendChild(b)});
+ $('heroChar').style.left=(8+idx*8)+'%';$('coin').style.left=(15+idx*7)+'%';
+}
+function answer(btn,correct){
+ if($('nextBtn').disabled===false)return;
+ [...$('answers').children].forEach(b=>b.disabled=true);
+ if(correct){score+=10;$('score').textContent=score;btn.classList.add('correct');$('feedback').textContent='🌟 Betul! '+current.why}
+ else{btn.classList.add('wrong');$('feedback').textContent='💡 Belum tepat. '+current.why;[...$('answers').children].forEach(b=>{if(b.textContent.endsWith(current.a[current.c]))b.classList.add('correct')})}
+ $('nextBtn').disabled=false;
+}
+function next(){if(idx<questions.length-1){idx++;showQuestion()}else endGame()}
+function endGame(){
+ if(finished)return;finished=true;clearInterval(timerId);updateTimer();$('gameCard').classList.add('hidden');$('resultCard').classList.remove('hidden');
+ const secs=Math.floor((Date.now()-startAt)/1000);currentResult={name:$('studentName').value.trim(),klass:$('className').value.trim(),score,time:secs,date:new Date().toLocaleString('ms-MY')};
+ $('resultText').textContent=`${currentResult.name}, markah anda ${score}/100 dan masa ${fmt(secs)}. ${score>=80?'Hebat! Anda memang jaguh tatabahasa!':score>=50?'Bagus! Teruskan berlatih!':'Teruskan usaha. Anda pasti boleh!'}`;
+}
+let currentResult=null;
+function getRecords(){try{return JSON.parse(localStorage.getItem('tatabahasaRecords')||'[]')}catch(e){return []}}
+function saveResult(){if(!currentResult)return;let r=getRecords();r.push(currentResult);r.sort((a,b)=>b.score-a.score||a.time-b.time);localStorage.setItem('tatabahasaRecords',JSON.stringify(r.slice(0,100)));renderBoard();$('saveBtn').textContent='✓ Keputusan disimpan';}
+function renderBoard(){
+ const r=getRecords().sort((a,b)=>b.score-a.score||a.time-b.time);$('boardBody').innerHTML='';
+ if(!r.length){$('boardBody').innerHTML='<tr><td colspan="5">Belum ada rekod. Jom bermain!</td></tr>';return}
+ r.forEach((x,i)=>{const tr=document.createElement('tr');[i+1,x.name,x.klass||'—',x.score,fmt(x.time)].forEach((v,j)=>{const td=document.createElement('td');td.textContent=v;if(j>=3)td.className='num';tr.appendChild(td)});$('boardBody').appendChild(tr)});
+}
+function downloadCSV(){const r=getRecords();if(currentResult)r.push(currentResult);if(!r.length){alert('Belum ada keputusan untuk dimuat turun.');return}const rows=[['Nama','Kelas','Markah','Masa saat','Tarikh'],...r.map(x=>[x.name,x.klass,x.score,x.time,x.date])];const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='keputusan-tatabahasa-tahun-2.csv';a.click();URL.revokeObjectURL(url)}
+$('startBtn').onclick=startGame;$('nextBtn').onclick=next;$('quitBtn').onclick=()=>{if(confirm('Tamatkan permainan sekarang?'))endGame()};$('againBtn').onclick=()=>{$('resultCard').classList.add('hidden');$('startCard').classList.remove('hidden');$('studentName').focus()};$('saveBtn').onclick=saveResult;$('csvBtn').onclick=downloadCSV;$('clearBoard').onclick=()=>{if(confirm('Padam semua rekod pada peranti ini?')){localStorage.removeItem('tatabahasaRecords');renderBoard()}};renderBoard();
+</script>
+</body>
+</html>
